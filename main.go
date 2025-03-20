@@ -50,23 +50,23 @@ func configureTerminal() (restore func(), err error) {
 }
 
 type board struct {
-	grid          [][]rune
-	width, height int
-	curX, curY    int
-	currPlayer    rune // this is a slightly weird design choice
-	moveCount     int
+	grid       [][]rune
+	dimX, dimY int
+	curX, curY int
+	currPlayer rune // this is a slightly weird design choice
+	moveCount  int
 }
 
 func newBoard(width, height int) *board {
 	b := board{
-		width:  width,
-		height: height,
-		grid:   make([][]rune, height),
-		curX:   1, curY: 1, // start with cursor in the middle
+		dimX: width,
+		dimY: height,
+		grid: make([][]rune, height),
+		curX: 1, curY: 1, // start with cursor in the middle
 		currPlayer: 'X',
 	}
-	for i := range b.width {
-		b.grid[i] = make([]rune, b.height)
+	for i := range b.dimX {
+		b.grid[i] = make([]rune, b.dimY)
 	}
 	return &b
 }
@@ -91,15 +91,15 @@ func (b *board) evalBoardState(input rune) (continueGame bool) {
 
 func (b *board) checkForWin() bool {
 	diag1HasWinner, diag2HasWinner := true, true
-	for yi := range b.height {
+	for yi := range b.dimY {
 		if pos := b.grid[0][0]; pos != b.grid[yi][yi] || pos == 0 {
 			diag1HasWinner = false
 		}
-		if pos := b.grid[b.height-1][0]; pos != b.grid[b.height-1-yi][yi] || pos == 0 {
+		if pos := b.grid[b.dimY-1][0]; pos != b.grid[b.dimY-1-yi][yi] || pos == 0 {
 			diag2HasWinner = false
 		}
 		rowHasWinner, colHasWinner := true, true
-		for xi := range b.width {
+		for xi := range b.dimX {
 			if pos := b.grid[yi][0]; pos != b.grid[yi][xi] || pos == 0 {
 				rowHasWinner = false
 			}
@@ -126,7 +126,7 @@ func (b *board) processInput(input rune) {
 		b.curX++
 	case ' ':
 		if b.grid[b.curY][b.curX] != 0 {
-			fmt.Printf("\r\n\nCell already taken!") // a lot of this API is a little awkward
+			fmt.Printf("\r\n\nPosition already filled!") // a lot of this API is a little awkward
 			time.Sleep(500 * time.Millisecond)
 			return
 		}
@@ -138,14 +138,14 @@ func (b *board) processInput(input rune) {
 
 // normalize positions in case of overflow
 func (b *board) normalizeXY() {
-	if b.curY >= b.height {
-		b.curY = b.height - 1
+	if b.curY >= b.dimY {
+		b.curY = b.dimY - 1
 	}
 	if b.curY < 0 {
 		b.curY = 0
 	}
-	if b.curX >= b.width {
-		b.curX = b.width - 1
+	if b.curX >= b.dimX {
+		b.curX = b.dimX - 1
 	}
 	if b.curX < 0 {
 		b.curX = 0
@@ -165,9 +165,9 @@ func (b *board) otherPlayer() rune {
 }
 
 func (b *board) isFull() bool {
-	for _, row := range b.grid {
-		for _, cell := range row {
-			if cell == 0 {
+	for yi := range b.dimY {
+		for xi := range b.dimX {
+			if b.grid[yi][xi] == 0 {
 				return false
 			}
 		}
@@ -190,25 +190,26 @@ func (b *board) instructions() string {
 func (b *board) printState() {
 	clearScreen()
 	fmt.Printf(b.instructions())
-	for rowIx, row := range b.grid {
+	for yi := range b.dimY {
 		fmt.Print("       ") // tabs don't work in raw mode
-		for colIx, cell := range row {
-			out := string(cell)
-			if b.curX == colIx && b.curY == rowIx && cell == 0 {
+		for xi := range b.dimX {
+			pos := b.grid[yi][xi]
+			out := string(b.grid[yi][xi])
+			if b.curX == xi && b.curY == yi && pos == 0 {
 				out = "█" // literally just a block UTF-8 character
-			} else if b.curX == colIx && b.curY == rowIx && cell != 0 {
-				out = fmt.Sprintf("\033[7m%c\033[0m", cell) // highlight existing character
-			} else if cell == 0 {
+			} else if b.curX == xi && b.curY == yi && pos != 0 {
+				out = fmt.Sprintf("\033[7m%c\033[0m", pos) // highlight existing character
+			} else if pos == 0 {
 				out = " "
 			}
-			if colIx+1 != b.width {
+			if xi+1 != b.dimX {
 				out += "|"
 			}
 			fmt.Printf("%s", out)
 		}
 		fmt.Printf("\r\n       ") // tabs yay
-		if rowIx+1 != b.height {
-			for range b.width*2 - 1 {
+		if yi+1 != b.dimY {
+			for range b.dimX*2 - 1 {
 				fmt.Printf("-")
 			}
 			fmt.Printf("\r\n")
