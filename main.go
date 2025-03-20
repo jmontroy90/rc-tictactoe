@@ -6,6 +6,7 @@ import (
 	"golang.org/x/term"
 	"log"
 	"os"
+	"os/exec"
 	"time"
 )
 
@@ -175,14 +176,13 @@ func (b *board) isFull() bool {
 }
 
 func clearScreen() {
-	fmt.Print("\033[2J")
-	//cmd := exec.Command("clear") // valid for literally just my computer running macOS
-	//cmd.Stdout = os.Stdout
-	//_ = cmd.Run()
+	cmd := exec.Command("clear") // valid for literally just my computer running macOS
+	cmd.Stdout = os.Stdout
+	_ = cmd.Run()
 }
 
 func (b *board) instructions() string {
-	return fmt.Sprintf("\r- Enter 'q' to quit\r\n" +
+	return fmt.Sprintf("- Enter 'q' to quit\r\n" +
 		"- WASD to control up-left-down-right\r\n" +
 		"- SPACE to input move\r\n\n")
 }
